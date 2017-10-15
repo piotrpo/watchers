@@ -266,7 +266,7 @@ public class WatchersProcessor extends AbstractProcessor
         src.ln();
         src.pl(ident, "public class %s extends  %s {", producedClassName, classModel.getClassName());
         src.ln();
-        src.pl(++ident, "private %s observed;", classModel.getClassName());
+//        src.pl(++ident, "private %s observed;", classModel.getClassName());
         src.pl(ident, "private Observer listener;");
 
         String listeners = "public Observer getListener()\n" +
@@ -280,9 +280,9 @@ public class WatchersProcessor extends AbstractProcessor
                 "}";
         src.pl(ident, listeners);
 
-        src.pl(ident, "public  %s (%s observed){", producedClassName, classModel.getClassName());
-        src.pl(++ident, "this.observed = observed;");
-        src.pl(--ident, "}");
+//        src.pl(ident, "public  %s (%s observed){", producedClassName, classModel.getClassName());
+//        src.pl(++ident, "this.observed = observed;");
+//        src.pl(--ident, "}");
 
         src.pl(ident, "private void notifyDataChanged(){");
         src.pl(++ident, "listener.dataChanged();");

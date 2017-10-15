@@ -15,13 +15,41 @@
 
 package pl.com.digita.watchers.example;
 
-public class Main
+import pl.com.digita.watchers.library.annotations.Observe;
+
+@Observe
+public class Person
 {
-    public static void main(String[] args)
+    private String firstName;
+    private String lastName;
+
+    Person()
     {
-        PersonObserved personObserved = new PersonObserved();
-        personObserved.setListener(() -> System.out.println("Person data was changed"));
-        personObserved.setFirstName("Daenerys");
-        personObserved.setLastName("Targaryen");
+    }
+
+    public Person(String firstName, String lastName)
+    {
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
+
+    public String getFirstName()
+    {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName)
+    {
+        this.firstName = firstName;
+    }
+
+    public String getLastName()
+    {
+        return lastName;
+    }
+
+    public void setLastName(String lastName)
+    {
+        this.lastName = lastName;
     }
 }
