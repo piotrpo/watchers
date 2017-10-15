@@ -11,4 +11,7 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile group: 'com.google.auto.service', name: 'auto-service', version: '1.0-rc3'
+    compile project(":library")
+
 }
