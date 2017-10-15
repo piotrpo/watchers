@@ -123,7 +123,8 @@ public class WatchersProcessor extends AbstractProcessor
         {
             try
             {
-                produceClass(classModel, filer);
+                produceExtendingClass(classModel, filer);
+                produceWrapperClass(classModel, filer);
             }
             catch (IOException e)
             {
@@ -251,9 +252,9 @@ public class WatchersProcessor extends AbstractProcessor
         }
     }
 
-    private void produceClass(ClassModel classModel, Filer filer) throws IOException
+    private void produceExtendingClass(ClassModel classModel, Filer filer) throws IOException
     {
-        String producedClassName = classModel.getClassName() + "Observed";
+        String producedClassName = classModel.getClassName() + "Observable";
         JavaFileObject sourceFile = filer.createSourceFile(classModel.getClassPackage() + "." + producedClassName);
 
         PrintWriter writer = new PrintWriter(sourceFile.openOutputStream());
@@ -294,6 +295,60 @@ public class WatchersProcessor extends AbstractProcessor
         {
             src.pl(ident, "public void %s(%s value){", setterModel.getSetterName(), setterModel.getParameterType());
             src.pl(++ident, "super.%s(value);", setterModel.getSetterName());
+            src.pl(ident, "notifyDataChanged();");
+            src.pl(--ident, "}");
+            src.ln();
+        }
+
+        src.pl(0, "}");
+
+        src.writer.flush();
+        src.writer.close();
+    }
+
+    private void produceWrapperClass(ClassModel classModel, Filer filer) throws IOException
+    {
+        String producedClassName = classModel.getClassName() + "Wrapped";
+        JavaFileObject sourceFile = filer.createSourceFile(classModel.getClassPackage() + "." + producedClassName);
+
+        PrintWriter writer = new PrintWriter(sourceFile.openOutputStream());
+        FilerUtils src = new FilerUtils(writer);
+        int ident = 0;
+
+        src.pl(ident, "package %s;", classModel.getClassPackage());
+        src.ln();
+        src.pl(ident, "import pl.com.digita.watchers.library.listeners.Observer;");
+        src.ln();
+        src.pl(ident, "public class %s{", producedClassName);
+        src.ln();
+        src.pl(++ident, "private %s observed;", classModel.getClassName());
+        src.pl(ident, "private Observer listener;");
+
+        String listeners = "public Observer getListener()\n" +
+                "{\n" +
+                "    return listener;\n" +
+                "}\n" +
+                "\n" +
+                "public void setListener(Observer listener)\n" +
+                "{\n" +
+                "    this.listener = listener;\n" +
+                "}";
+        src.pl(ident, listeners);
+
+        src.pl(ident, "public  %s (%s observed){", producedClassName, classModel.getClassName());
+        src.pl(++ident, "this.observed = observed;");
+        src.pl(--ident, "}");
+
+        src.pl(ident, "private void notifyDataChanged(){");
+        src.pl(++ident, "listener.dataChanged();");
+        src.pl(--ident, "}");
+        src.ln();
+
+        //generate setters
+        for (SetterModel setterModel : classModel.getSetters())
+        {
+            src.pl(ident, "public void %s(%s value){", setterModel.getSetterName(), setterModel.getParameterType());
+            src.pl(++ident, "observed.%s(value);", setterModel.getSetterName());
             src.pl(ident, "notifyDataChanged();");
             src.pl(--ident, "}");
             src.ln();

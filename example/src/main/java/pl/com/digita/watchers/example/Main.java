@@ -19,9 +19,18 @@ public class Main
 {
     public static void main(String[] args)
     {
-        PersonObserved personObserved = new PersonObserved();
-        personObserved.setListener(() -> System.out.println("Person data was changed"));
-        personObserved.setFirstName("Daenerys");
-        personObserved.setLastName("Targaryen");
+        PersonObservable personObservable = new PersonObservable();
+        personObservable.setListener(() -> System.out.println("Person data was changed"));
+        personObservable.setFirstName("Daenerys");
+        personObservable.setLastName("Targaryen");
+        System.out.println(personObservable);
+
+        Person person = new Person();
+        PersonWrapped personWrapped = new PersonWrapped(person);
+        personWrapped.setListener(() -> System.out.println("Wrapperd person object data changed"));
+        personWrapped.setFirstName("John");
+        personWrapped.setLastName("Snow");
+
+        System.out.println(person.toString());
     }
 }

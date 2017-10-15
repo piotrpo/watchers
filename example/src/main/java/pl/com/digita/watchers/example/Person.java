@@ -52,4 +52,13 @@ public class Person
     {
         this.lastName = lastName;
     }
+
+    @Override
+    public String toString()
+    {
+        return "Person{" +
+                "firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                '}';
+    }
 }
