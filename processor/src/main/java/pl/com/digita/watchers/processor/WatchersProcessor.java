@@ -12,7 +12,9 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
+import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.List;
@@ -77,7 +79,7 @@ public class WatchersProcessor extends AbstractProcessor
                 .collect(Collectors.toMap(ClassModel::toString, o -> o));
 
 
-        createLog(annotatedClassesMap.values().stream().map(ClassModel::getClassName).collect(Collectors.toList()));
+        //createLog(annotatedClassesMap.values().stream().map(ClassModel::getClassName).collect(Collectors.toList()));
 
         for (Element annotatedElement : annotatedElements)
         {
@@ -100,8 +102,19 @@ public class WatchersProcessor extends AbstractProcessor
         }
 
 
-        createLog(annotatedClassesMap.values().stream().flatMap(classModel -> classModel.getFields().stream()).map(SetterModel::toString).collect(Collectors.toList()));
-
+        //createLog(annotatedClassesMap.values().stream().flatMap(classModel -> classModel.getSetters().stream()).map(SetterModel::toString).collect(Collectors.toList()));
+        for (ClassModel classModel : annotatedClassesMap.values())
+        {
+            try
+            {
+                produceClass(classModel, filer);
+            }
+            catch (IOException e)
+            {
+                claimError(null, "error generating class " + classModel.toString());
+                e.printStackTrace();
+            }
+        }
         return true;
     }
 
@@ -127,7 +140,7 @@ public class WatchersProcessor extends AbstractProcessor
             return;
         }
         classModel
-                .getFields()
+                .getSetters()
                 .add(new SetterModel(executableElement.getSimpleName().toString(),
                         executableElement.getParameters().get(0).asType().toString()));
     }
@@ -196,16 +209,14 @@ public class WatchersProcessor extends AbstractProcessor
             printWriter.close();
             outputStream.flush();
             outputStream.close();
-
-
         }
         catch (Exception e)
         {
             e.printStackTrace();
             claimError(null, "Error writing");
+            throw new RuntimeException("Error generating class", e);
         }
     }
-
 
     private void claimError(Element element, String message, Object... args)
     {
@@ -221,6 +232,82 @@ public class WatchersProcessor extends AbstractProcessor
         else
         {
             return getClassElement(element.getEnclosingElement());
+        }
+    }
+
+    private void produceClass(ClassModel classModel, Filer filer) throws IOException
+    {
+        String producedClassName = classModel.getClassName() + "Observed";
+        JavaFileObject sourceFile = filer.createSourceFile(classModel.getClassPackage() + "." + producedClassName);
+
+        PrintWriter writer = new PrintWriter(sourceFile.openOutputStream());
+        FilerUtils src = new FilerUtils(writer);
+        int ident = 0;
+
+        src.pl(ident, "package %s;", classModel.getClassPackage());
+        src.ln();
+        src.pl(ident, "import pl.com.digita.watchers.library.listeners.Observer;");
+        src.ln();
+        src.pl(ident, "public class %s extends  %s {", producedClassName, classModel.getClassName());
+        src.ln();
+        src.pl(++ident, "private %s observed;", classModel.getClassName());
+        src.pl(ident, "private Observer listener;");
+
+        String listeners = "public Observer getListener()\n" +
+                "{\n" +
+                "    return listener;\n" +
+                "}\n" +
+                "\n" +
+                "public void setListener(Observer listener)\n" +
+                "{\n" +
+                "    this.listener = listener;\n" +
+                "}";
+        src.pl(ident, listeners);
+
+        src.pl(ident, "public  %s (%s observed){", producedClassName, classModel.getClassName());
+        src.pl(++ident, "this.observed = observed;");
+        src.pl(--ident, "}");
+
+        src.pl(ident, "private void notifyDataChanged(){");
+        src.pl(++ident, "listener.dataChanged();");
+        src.pl(--ident, "}");
+        src.ln();
+
+        //generate setters
+        for (SetterModel setterModel : classModel.getSetters())
+        {
+            src.pl(ident, "public void %s(%s value){", setterModel.getSetterName(), setterModel.getParameterType());
+            src.pl(++ident, "super.%s(value);", setterModel.getSetterName());
+            src.pl(ident, "notifyDataChanged();");
+            src.pl(--ident, "}");
+            src.ln();
+        }
+
+        src.pl(0, "}");
+
+        src.writer.flush();
+        src.writer.close();
+    }
+
+    private static class FilerUtils
+    {
+
+        private final PrintWriter writer;
+
+        FilerUtils(PrintWriter writer)
+        {
+            this.writer = writer;
+        }
+
+        void pl(int level, String string, Object... args)
+        {
+            String ident = new String(new char[level * 4]).replace("\0", " ");
+            writer.println(ident + String.format(string, args));
+        }
+
+        void ln()
+        {
+            writer.println();
         }
     }
 }

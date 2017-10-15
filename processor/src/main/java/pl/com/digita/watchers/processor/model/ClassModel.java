@@ -40,7 +40,7 @@ public class ClassModel
         this.className = className;
     }
 
-    public Set<SetterModel> getFields()
+    public Set<SetterModel> getSetters()
     {
         return fields;
     }
