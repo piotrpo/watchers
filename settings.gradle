@@ -1,0 +1,5 @@
+rootProject.name = 'watchers'
+include 'library'
+include 'processor'
+include 'example'
+
