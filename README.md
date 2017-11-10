@@ -19,7 +19,7 @@ public class Main
         Person person = new Person();
         PersonWrapped personWrapped = new PersonWrapped(person);
         personWrapped.setListener(() -> System.out.println("Wrapperd person object data changed"));
-        personWrapped.setFirstName("John");
+        personWrapped.setFirstName("Jon");
         personWrapped.setLastName("Snow");
 
         System.out.println(person.toString());
